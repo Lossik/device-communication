@@ -1,0 +1,8 @@
+{
+    "name": "lossik/device-communication",
+    "autoload": {
+        "psr-4": {
+            "Lossik\\": "src/"
+        }
+    }
+}
