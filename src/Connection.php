@@ -4,6 +4,9 @@
 namespace Lossik\Device\Communication;
 
 
+use const Lossik\Device\Mikrotik\Api\API_IMPOSSIBLE_LOGIN;
+use const Lossik\Device\Mikrotik\Api\API_NO_LOGIN;
+
 class Connection implements IConnection
 {
 
@@ -52,11 +55,10 @@ class Connection implements IConnection
 			}
 		}
 		if ($this->isLoged()) {
-			return true;
+			return $this;
 		}
 		else {
-			var_dump($this);
-			throw $this->error("Can not login.", 1);
+			throw $this->error("Login impossible", API_IMPOSSIBLE_LOGIN);
 		}
 	}
 
