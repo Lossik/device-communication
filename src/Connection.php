@@ -88,12 +88,12 @@ class Connection implements IConnection
 		}
 
 		if (!$this->hasSocket()) {
-			if (!$this->definition->socket($this->options, $this->ip)) {
+			if (!$this->socket = $this->definition->socket($this->options, $this->ip)) {
 				throw $this->error("", 2);
 			}
 		}
 		$this->loged = $this->definition->login($this->socket, $login, $password);
-		$this->loged || fclose($this->socket);
+		$this->loged || $this->disconnect();
 
 		return $this->loged;
 	}
