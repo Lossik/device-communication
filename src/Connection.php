@@ -105,6 +105,12 @@ class Connection implements IConnection
 	}
 
 
+	public function isConnected()
+	{
+		return is_resource($this->socket);
+	}
+
+
 	protected function error($str, $no)
 	{
 		return new \Exception($str, $no);
