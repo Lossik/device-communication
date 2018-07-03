@@ -4,7 +4,7 @@
 namespace Lossik\Device\Communication;
 
 
-interface IOptions
+class LogicException extends \LogicException
 {
 
 

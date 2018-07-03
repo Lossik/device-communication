@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 
 namespace Lossik\Device\Communication;
@@ -113,7 +113,7 @@ class Connection implements IConnection
 
 	protected function error($str, $no)
 	{
-		return new \Exception($str, $no);
+		return new RuntimeException($str, $no);
 	}
 
 

@@ -1,5 +1,8 @@
 {
     "name": "lossik/device-communication",
+	"require":{
+		"php": ">=7.1"
+	},
     "autoload": {
         "psr-4": {
             "Lossik\\Device\\Communication\\": "src/"
