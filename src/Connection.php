@@ -136,4 +136,16 @@ class Connection implements IConnection
 			$this->socket = null;
 		}
 	}
+
+
+	public function version()
+	{
+		throw new LogicException();
+	}
+
+
+	public function Command($menu): ICommand
+	{
+		throw new LogicException();
+	}
 }

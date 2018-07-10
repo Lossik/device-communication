@@ -12,4 +12,8 @@ interface IConnection
 
 	public function comm($com, $arr = []);
 
+	public function version();
+
+	public function Command($menu): ICommand;
+
 }
