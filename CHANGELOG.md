@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [3.0.0] - Unreleased
 
-A new, transport-independent contract. Nothing of the 2.x API remains; full upgrade notes come with the release.
+A new, transport-independent contract. Nothing of the 2.x API remains; the upgrade notes come with the release.
 
 ### Changed
 
@@ -15,15 +15,28 @@ A new, transport-independent contract. Nothing of the 2.x API remains; full upgr
 - The contract is a RouterOS command, not a socket: `Command` (menu, verb, attributes, query, proplist), `Query`
   (a condition tree compiled by each transport), `Result` (rows and `ret`), `Transport` and `StreamingTransport`.
   `IConnection`, `ICommand`, `IDefinition`, `IOptions` and `Connection` are removed.
-- User API `Client` and `Menu`: `print`, `first` (returns `null` when nothing matches), `add` (returns the new ID),
-  `update` and `delete` (send nothing and return 0 when nothing matches), `run`, `listen`, `Client::version()`.
-- Typed exceptions instead of one `RuntimeException` with numeric codes: the marker interface
-  `CommunicationException`, `ConnectionException`, `TimeoutException`, `AuthenticationException`, `TrapException`,
-  `FatalException`, `ProtocolException` and `UnsupportedOperationException`.
-- Supported are only patched PHP releases (8.2.35+, 8.3.36+, 8.4.27+, 8.5.12+), as in 2.1.0; the PHP minimum is
-  raised only in a minor release.
+- User API `Client` and `Menu`: `print`, `first` (returns `null` when nothing matches; 2.x `getOneItem()` returned `[]`),
+  `add` (returns the new ID as `?string`, `null` when the device returns none), `update` and `delete` (return the
+  number of items; when the query matches nothing they send nothing and return 0, where 2.x sent an empty `.id=`),
+  `run`, `listen`, `Client::version()`. `get($where, $callback)` becomes `print(Query)` plus a filter in PHP,
+  `command()` becomes `run()`, `del` becomes `delete`.
+- Typed exceptions instead of one `RuntimeException` with numeric codes (the namespace constants such as
+  `IMPOSSIBLE_LOGIN` are gone): the marker interface `CommunicationException`, `ConnectionException`,
+  `TimeoutException`, `AuthenticationException`, `TrapException`, `FatalException`, `ProtocolException` and
+  `UnsupportedOperationException`. After a `ConnectionException` or a subclass the transport is closed and every
+  further call throws `ConnectionException` without I/O (2.x with `mikrotik-api`: `TypeError`); a `TrapException`
+  leaves it open. `UnsupportedOperationException` is a `\LogicException`, not a `CommunicationException`.
+- Supported are only patched PHP releases (8.2.35+, 8.3.36+, 8.4.27+, 8.5.12+), as in 2.1.0.
+- Policy: the PHP minimum is raised only in a minor release, with a note in this changelog.
 
-## [2.1.0]
+### Removed
+
+- `ICommand` (`command`, `get`, `add`, `update`, `del`) is replaced by `Menu`. What the 2.x clients put on top of
+  it is gone as well: the deprecated aliases (`addItem`, `updateItem`, `getOneItem`, `delItem`, ...), the magic
+  command methods (`__call`) and the `~` prefix condition of `get()`. `Query` has no prefix or regular-expression
+  condition, because the RouterOS API cannot express one; filter the rows in PHP.
+
+## [2.1.0] - 2026-10-22
 
 Maintenance release of the 2.x line: it runs on patched PHP and is MIT licensed. The code and the public API are
 unchanged and the known issues of 2.x are **not** fixed (see Known issues; they are fixed in 3.0).
