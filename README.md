@@ -1,12 +1,12 @@
 # lossik/device-communication
 
-Common interfaces (`IConnection`, `ICommand`, `IDefinition`, `IOptions`), a base `Connection` and exceptions shared by
-the device communication clients [`lossik/mikrotik-api`](https://github.com/Lossik/mikrotik-api) and
-[`lossik/mikrotik-ssh`](https://github.com/Lossik/mikrotik-ssh). It does not talk to any device on its own.
+The transport-independent contract of the RouterOS clients [`lossik/mikrotik-api`](https://github.com/Lossik/mikrotik-api)
+and [`lossik/mikrotik-ssh`](https://github.com/Lossik/mikrotik-ssh): a command (`Command`, `Query`, `Result`), the
+transport interfaces (`Transport`, `StreamingTransport`), the user API (`Client`, `Menu`) and typed exceptions. It
+does not talk to any device on its own.
 
-**2.x is maintenance only.** It receives fixes needed to run on supported PHP releases, nothing else. New
-development happens in 3.0 (branch `feature/3.0`, to be released), which fixes the known issues of 2.x and changes
-the API.
+**3.0 is in development (branch `feature/3.0`, unreleased).** The API is not final and the 3.0 transports of the
+clients are not released yet; see the [changelog](CHANGELOG.md). The released line is 2.x (maintenance only).
 
 ## Supported PHP
 
@@ -15,18 +15,6 @@ CVE-2026-109619, "PHP2Shell"). `composer.json` requires `"php": "^8.2"`, so Comp
 an unpatched PHP: Linux distributions backport the fixes without changing the version number, and Composer cannot
 tell the two apart. Only the CI of this project enforces the patched minima. The PHP minimum is raised only in a
 minor release, announced in the [changelog](CHANGELOG.md).
-
-## Installation
-
-Usually installed as a dependency of `lossik/mikrotik-api` or `lossik/mikrotik-ssh`. Directly:
-
-```bash
-composer require lossik/device-communication:^2.1
-```
-
-## Known issues
-
-2.x has design defects that are fixed only in 3.0. They are listed in the [changelog](CHANGELOG.md#known-issues).
 
 ## License
 

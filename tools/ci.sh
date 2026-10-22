@@ -1,11 +1,15 @@
 #!/bin/bash
-# CI of the 2.x branch, run inside a php:X-cli container from the repository root:
+# CI of the 3.x line, run inside a php:X-cli container from the repository root:
 #
 #   bash tools/ci.sh              all steps
-#   bash tools/ci.sh --deps-only  steps 1-6 only (PHP check, tools, Composer, dependencies) - used by tools/chr/run-live.sh
+#   bash tools/ci.sh --deps-only  steps 1-6 only (PHP check, tools, Composer, dependencies)
 #
-# Steps: (1) PHP version check (only patched releases), (2) git, unzip and a pinned, SHA256-verified Composer,
-# (4) composer validate --strict, (5) composer update (no lock file is committed), (6) composer check-platform-reqs.
+# Steps: (1) PHP version check (only patched releases), (2) git, unzip, ext-pcntl (PHPUnit enforces time limits only
+# with it) and a pinned, SHA256-verified Composer, (4) composer validate --strict, (5) composer update (no lock file
+# is committed), (6) composer check-platform-reqs, (8) phpcs, (9) phpstan, (10) PHPUnit (default configuration;
+# groups live and docker are excluded there).
+# Steps (3) (clone of lossik/device-communication, DC_REF) and (7) (composer audit) exist only in the clients
+# mikrotik-api and mikrotik-ssh: this package is the one they clone, and it has no runtime dependencies to audit.
 set -euo pipefail
 
 COMPOSER_VERSION=2.10.2
@@ -49,6 +53,19 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get install -y -qq --no-install-recommends git unzip > /dev/null
 
+step "(2) ext-pcntl"
+pcntl_loaded() {
+	php -r 'exit(extension_loaded("pcntl") ? 0 : 1);'
+}
+if ! pcntl_loaded; then
+	docker-php-ext-install pcntl > /dev/null
+fi
+if ! pcntl_loaded; then
+	echo "ERROR: ext-pcntl is not loaded; PHPUnit would silently not enforce the test time limits" >&2
+	exit 1
+fi
+echo "ext-pcntl OK"
+
 step "(2) Composer $COMPOSER_VERSION (SHA256 verified)"
 COMPOSER_DIR=$(mktemp -d)
 php -r '
@@ -89,5 +106,14 @@ if [ "$DEPS_ONLY" = "1" ]; then
 	step "dependencies ready (--deps-only)"
 	exit 0
 fi
+
+step "(8) phpcs"
+vendor/bin/phpcs
+
+step "(9) phpstan"
+vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+
+step "(10) phpunit"
+vendor/bin/phpunit
 
 step "OK"

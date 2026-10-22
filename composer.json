@@ -1,14 +1,34 @@
 {
     "name": "lossik/device-communication",
-    "description": "Common interfaces and base connection for device communication clients (MikroTik API, SSH)",
+    "description": "Transport-independent contract for RouterOS clients: commands, queries, results, a client API and typed exceptions",
     "type": "library",
     "license": "MIT",
-	"require":{
-		"php": "^8.2"
-	},
+    "require": {
+        "php": "^8.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5",
+        "phpstan/phpstan": "^2.1",
+        "squizlabs/php_codesniffer": "^4.0"
+    },
     "autoload": {
         "psr-4": {
-            "Lossik\\Device\\Communication\\": "src/"
+            "Lossik\\DeviceCommunication\\": "src/"
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Lossik\\DeviceCommunication\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "stan": "phpstan analyse --memory-limit=1G",
+        "cs": "phpcs",
+        "ci": [
+            "@cs",
+            "@stan",
+            "@test"
+        ]
     }
 }
