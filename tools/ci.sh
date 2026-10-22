@@ -1,15 +1,20 @@
 #!/bin/bash
-# CI of the 3.x line, run inside a php:X-cli container from the repository root:
+# CI of the 3.x line, run inside a php:X-cli container from the repository root. The same script is used by
+# lossik/device-communication, lossik/mikrotik-api and lossik/mikrotik-ssh:
 #
 #   bash tools/ci.sh              all steps
-#   bash tools/ci.sh --deps-only  steps 1-6 only (PHP check, tools, Composer, dependencies)
+#   bash tools/ci.sh --deps-only  steps 1-6 only (PHP check, tools, Composer, dependencies) - used by tools/chr/run-live.sh
 #
 # Steps: (1) PHP version check (only patched releases), (2) git, unzip, ext-pcntl (PHPUnit enforces time limits only
-# with it) and a pinned, SHA256-verified Composer, (4) composer validate --strict, (5) composer update (no lock file
-# is committed), (6) composer check-platform-reqs, (8) phpcs, (9) phpstan, (10) PHPUnit (default configuration;
-# groups live and docker are excluded there).
-# Steps (3) (clone of lossik/device-communication, DC_REF) and (7) (composer audit) exist only in the clients
-# mikrotik-api and mikrotik-ssh: this package is the one they clone, and it has no runtime dependencies to audit.
+# with it) and a pinned, SHA256-verified Composer, (3) clone of lossik/device-communication, (4) composer validate
+# --strict, (5) composer update (no lock file is committed), (6) composer check-platform-reqs, (7) composer audit,
+# (8) phpcs, (9) phpstan, (10) PHPUnit (default configuration; groups live and docker are excluded there).
+#
+# Environment (all optional; unset in lossik/device-communication itself):
+#   DC_REF, DC_URL  step (3) clones branch DC_REF of the repository DC_URL to /tmp/dc and sets DC_PATH=/tmp/dc
+#   DC_PATH         step (5) installs lossik/device-communication from this directory (a Composer path repository
+#                   written to composer.dev.json, which is gitignored together with its composer.dev.lock); the
+#                   committed composer.json never carries a repository
 set -euo pipefail
 
 COMPOSER_VERSION=2.10.2
@@ -61,7 +66,7 @@ if ! pcntl_loaded; then
 	docker-php-ext-install pcntl > /dev/null
 fi
 if ! pcntl_loaded; then
-	echo "ERROR: ext-pcntl is not loaded; PHPUnit would silently not enforce the test time limits" >&2
+	echo "ERROR: ext-pcntl is not loaded; PHPUnit would not enforce the test time limits" >&2
 	exit 1
 fi
 echo "ext-pcntl OK"
@@ -93,10 +98,38 @@ composer() {
 export COMPOSER_ALLOW_SUPERUSER=1
 composer --version
 
+if [ -n "${DC_REF:-}" ]; then
+	step "(3) clone lossik/device-communication, branch $DC_REF"
+	if [ -z "${DC_URL:-}" ]; then
+		echo "ERROR: DC_REF is set but DC_URL is not" >&2
+		exit 1
+	fi
+	rm -rf /tmp/dc
+	git clone --quiet --depth 1 --branch "$DC_REF" "$DC_URL" /tmp/dc
+	DC_PATH=/tmp/dc
+	echo "lossik/device-communication $(git -C /tmp/dc rev-parse --short HEAD)"
+fi
+
 step "(4) composer validate --strict"
 composer validate --strict
 
-step "(5) composer update"
+if [ -n "${DC_PATH:-}" ]; then
+	step "(5) composer update (lossik/device-communication from $DC_PATH)"
+	php -r '
+$config = json_decode((string) file_get_contents("composer.json"), true, 512, JSON_THROW_ON_ERROR);
+$config["repositories"] = [[
+    "type" => "path",
+    "url" => $argv[1],
+    "options" => ["symlink" => false, "versions" => ["lossik/device-communication" => "3.0.0"]],
+]];
+$json = json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+file_put_contents("composer.dev.json", $json . "\n");
+' "$DC_PATH"
+	# composer.dev.json and composer.dev.lock are used by steps 5-7
+	export COMPOSER=composer.dev.json
+else
+	step "(5) composer update"
+fi
 composer update --no-progress --prefer-dist
 
 step "(6) composer check-platform-reqs"
@@ -106,6 +139,9 @@ if [ "$DEPS_ONLY" = "1" ]; then
 	step "dependencies ready (--deps-only)"
 	exit 0
 fi
+
+step "(7) composer audit"
+composer audit
 
 step "(8) phpcs"
 vendor/bin/phpcs
