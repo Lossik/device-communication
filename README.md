@@ -86,7 +86,9 @@ Implement `Transport` (and `StreamingTransport` if the protocol can stream). The
 - **After a `ConnectionException` or a subclass the transport is closed**, and every further call throws
   `ConnectionException` without any I/O. A `TrapException` does not close it: read the response to its end first.
   `close()` is idempotent; `isOpen()` tells the state.
-- For type-valid input `execute()` throws no `\Error`; every failure is a `CommunicationException`.
+- For type-valid input `execute()` throws no `\Error`. Input the transport cannot encode (a value its charset
+  cannot represent) may be an `\InvalidArgumentException` before any I/O; every other failure is a
+  `CommunicationException`.
 - A `Query` node the transport cannot translate is an `UnsupportedOperationException`, never a wrong query.
 - `stream()` calls `$onRow` for every row and cancels the command when it returns `false`; it ends with
   `TimeoutException` (`limit` `'idleTimeout'`) when the device is silent for `$idleTimeout` seconds (`null` = no limit).
