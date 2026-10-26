@@ -1,7 +1,10 @@
 {
     "name": "lossik/device-communication",
+    "description": "Common interfaces and base connection for device communication clients (MikroTik API, SSH)",
+    "type": "library",
+    "license": "MIT",
 	"require":{
-		"php": ">=7.1"
+		"php": "^8.2"
 	},
     "autoload": {
         "psr-4": {
